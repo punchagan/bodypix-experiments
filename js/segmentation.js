@@ -1,6 +1,36 @@
-function loadImage(img) {
+const models = {
+  resnet: {
+    architecture: "ResNet50",
+    outputStride: 16,
+    multiplier: 1,
+    quantBytes: 2
+  },
+  mobilenet: {
+    architecture: "MobileNetV1",
+    outputStride: 8,
+    multiplier: 0.75,
+    quantBytes: 2
+  }
+};
+
+async function setupImageProcessing(net) {
   const canvas = document.querySelector("canvas");
   const ctx = canvas.getContext("2d");
+  const imageInput = document.querySelector("#inputImage");
+  const img = new Image();
+
+  imageInput.addEventListener("change", event => {
+    console.log(event.target.files[0]);
+    const file = event.target.files[0];
+
+    const reader = new FileReader();
+    reader.onload = (function(img) {
+      return function(e) {
+        img.src = e.target.result;
+      };
+    })(img);
+    reader.readAsDataURL(file);
+  });
 
   // Load the image on canvas
   img.addEventListener("load", async () => {
@@ -8,28 +38,11 @@ function loadImage(img) {
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
-    const segmentation = await loadAndPredict(img);
-    colourPop(canvas, segmentation);
+    processImage(canvas, net);
   });
 }
 
-const resNetModel = {
-  architecture: "ResNet50",
-  outputStride: 32,
-  multiplier: 1,
-  quantBytes: 2
-};
-
-const mobileNetModel = {
-  architecture: "MobileNetV1",
-  outputStride: 8,
-  multiplier: 0.75,
-  quantBytes: 2
-};
-
-async function loadAndPredict(img) {
-  const net = await bodyPix.load(resNetModel);
-  console.log(img);
+async function segmentImage(net, img) {
   const segmentation = await net.segmentPerson(img, {
     flipHorizontal: false,
     internalResolution: "medium",
@@ -37,6 +50,11 @@ async function loadAndPredict(img) {
   });
 
   return segmentation;
+}
+
+async function processImage(canvas, net) {
+  const segmentation = await segmentImage(net, canvas);
+  colourPop(canvas, segmentation);
 }
 
 // Display all pixels without humans in non-colour
@@ -77,18 +95,8 @@ async function colourPop(canvas, segmentation) {
   ctx.putImageData(newImage, 0, 0);
 }
 
-const imageInput = document.querySelector("#inputImage");
-imageInput.addEventListener("change", event => {
-  console.log(event.target.files[0]);
-  const file = event.target.files[0];
-  const img = new Image();
-
-  const reader = new FileReader();
-  reader.onload = (function(img) {
-    return function(e) {
-      img.src = e.target.result;
-    };
-  })(img);
-  reader.readAsDataURL(file);
-  loadImage(img);
-});
+(async () => {
+  const net = await bodyPix.load(models["resnet"]);
+  console.log(net);
+  await setupImageProcessing(net);
+})();
