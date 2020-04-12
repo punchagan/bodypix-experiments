@@ -1,9 +1,9 @@
 const models = {
   resnet: {
     architecture: "ResNet50",
-    outputStride: 16,
+    outputStride: 32,
     multiplier: 1,
-    quantBytes: 2
+    quantBytes: 4
   },
   mobilenet: {
     architecture: "MobileNetV1",
