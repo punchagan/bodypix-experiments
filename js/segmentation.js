@@ -49,13 +49,11 @@ async function setupImageProcessing(net) {
   const bgImg = new Image();
   bgInput.addEventListener("change", readImageFileHandler(bgImg));
   bgImg.addEventListener("load", async () => {
-    // Set canvas width, height same as image
-    bgCanvas.width = bgImg.width;
-    bgCanvas.height = bgImg.height;
-    bgCtx.drawImage(bgImg, 0, 0);
-    // NOTE: We get image data only the size of the fg...
-    // FIXME: What if fg is bigger? :)
-    const bgImageData = bgCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+    // Set canvas width, height same as *fg* image
+    bgCanvas.width = fgImg.width;
+    bgCanvas.height = fgImg.height;
+    bgCtx.drawImage(bgImg, 0, 0, bgCanvas.width, bgCanvas.height);
+    const bgImageData = bgCtx.getImageData(0, 0, bgCanvas.width, bgCanvas.height).data;
     processImage(net, canvas, bgImageData);
   });
 }
