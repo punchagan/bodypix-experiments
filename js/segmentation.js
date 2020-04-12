@@ -49,6 +49,8 @@ async function setupImageProcessing(net) {
   const bgImg = new Image();
   bgInput.addEventListener("change", readImageFileHandler(bgImg));
   bgImg.addEventListener("load", async () => {
+    // redraw the foreground image!
+    ctx.drawImage(fgImg, 0, 0);
     // Set canvas width, height same as *fg* image
     bgCanvas.width = fgImg.width;
     bgCanvas.height = fgImg.height;
