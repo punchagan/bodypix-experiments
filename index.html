@@ -8,7 +8,15 @@
 
   <body>
       <canvas id='canvas'></canvas>
-      <input id="inputImage" type="file" />
+      <div class="foreground">
+          <label for="foreground">Foreground Image</label>
+          <input type="file" name="foreground" id="fgImage" accept="image/*">
+      </div>
+      <div class="background">
+          <label for="background">Background Image</label>
+          <input type="file" name="background" id="bgImage">
+      </div>
+
       <!-- Place your code in the script tag below. You can also use an external .js file -->
   <script src="js/segmentation.js" type="text/javascript">
   </script>

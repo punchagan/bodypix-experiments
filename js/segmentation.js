@@ -13,13 +13,8 @@ const models = {
   }
 };
 
-async function setupImageProcessing(net) {
-  const canvas = document.querySelector("canvas");
-  const ctx = canvas.getContext("2d");
-  const imageInput = document.querySelector("#inputImage");
-  const img = new Image();
-
-  imageInput.addEventListener("change", event => {
+const readImageFileHandler = img => {
+  return event => {
     console.log(event.target.files[0]);
     const file = event.target.files[0];
 
@@ -30,15 +25,25 @@ async function setupImageProcessing(net) {
       };
     })(img);
     reader.readAsDataURL(file);
-  });
+  };
+};
+
+async function setupImageProcessing(net) {
+  const canvas = document.querySelector("canvas");
+  const ctx = canvas.getContext("2d");
+  const fgInput = document.querySelector("#fgImage");
+  const fgImg = new Image();
+
+  fgInput.addEventListener("change", readImageFileHandler(fgImg));
 
   // Load the image on canvas
-  img.addEventListener("load", async () => {
+  fgImg.addEventListener("load", async () => {
     // Set canvas width, height same as image
-    canvas.width = img.width;
-    canvas.height = img.height;
-    ctx.drawImage(img, 0, 0);
-    processImage(canvas, net);
+    canvas.width = fgImg.width;
+    canvas.height = fgImg.height;
+    ctx.drawImage(fgImg, 0, 0);
+    console.log(net);
+    processImage(net, canvas);
   });
 }
 
@@ -52,7 +57,7 @@ async function segmentImage(net, img) {
   return segmentation;
 }
 
-async function processImage(canvas, net) {
+async function processImage(net, canvas) {
   const segmentation = await segmentImage(net, canvas);
   colourPop(canvas, segmentation);
 }
