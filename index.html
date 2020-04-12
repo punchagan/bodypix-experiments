@@ -8,13 +8,15 @@
 
   <body>
       <canvas id='canvas'></canvas>
+      <canvas id='bgCanvas' style="display: none;"></canvas>
+      <h3 class="loader">Loading model...</h3>
       <div class="foreground">
           <label for="foreground">Foreground Image</label>
           <input type="file" name="foreground" id="fgImage" accept="image/*">
       </div>
       <div class="background">
           <label for="background">Background Image</label>
-          <input type="file" name="background" id="bgImage">
+          <input type="file" name="background" id="bgImage" accept="image/*">
       </div>
 
       <!-- Place your code in the script tag below. You can also use an external .js file -->

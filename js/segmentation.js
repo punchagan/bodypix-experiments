@@ -15,9 +15,7 @@ const models = {
 
 const readImageFileHandler = img => {
   return event => {
-    console.log(event.target.files[0]);
     const file = event.target.files[0];
-
     const reader = new FileReader();
     reader.onload = (function(img) {
       return function(e) {
@@ -30,20 +28,35 @@ const readImageFileHandler = img => {
 
 async function setupImageProcessing(net) {
   const canvas = document.querySelector("canvas");
+  const bgCanvas = document.querySelector("#bgCanvas");
   const ctx = canvas.getContext("2d");
-  const fgInput = document.querySelector("#fgImage");
-  const fgImg = new Image();
-
-  fgInput.addEventListener("change", readImageFileHandler(fgImg));
+  const bgCtx = bgCanvas.getContext("2d");
 
   // Load the image on canvas
+  const fgInput = document.querySelector("#fgImage");
+  const fgImg = new Image();
+  fgInput.addEventListener("change", readImageFileHandler(fgImg));
   fgImg.addEventListener("load", async () => {
     // Set canvas width, height same as image
     canvas.width = fgImg.width;
     canvas.height = fgImg.height;
     ctx.drawImage(fgImg, 0, 0);
-    console.log(net);
     processImage(net, canvas);
+  });
+
+  // Load the image on canvas
+  const bgInput = document.querySelector("#bgImage");
+  const bgImg = new Image();
+  bgInput.addEventListener("change", readImageFileHandler(bgImg));
+  bgImg.addEventListener("load", async () => {
+    // Set canvas width, height same as image
+    bgCanvas.width = bgImg.width;
+    bgCanvas.height = bgImg.height;
+    bgCtx.drawImage(bgImg, 0, 0);
+    // NOTE: We get image data only the size of the fg...
+    // FIXME: What if fg is bigger? :)
+    const bgImageData = bgCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+    processImage(net, canvas, bgImageData);
   });
 }
 
@@ -57,13 +70,10 @@ async function segmentImage(net, img) {
   return segmentation;
 }
 
-async function processImage(net, canvas) {
+async function processImage(net, canvas, bgData) {
   const segmentation = await segmentImage(net, canvas);
-  colourPop(canvas, segmentation);
-}
 
-// Display all pixels without humans in non-colour
-async function colourPop(canvas, segmentation) {
+  const grayEffect = bgData === undefined;
   const ctx = canvas.getContext("2d");
   const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const imageData = image.data;
@@ -71,8 +81,6 @@ async function colourPop(canvas, segmentation) {
   // Creating new image data
   const newImage = ctx.createImageData(canvas.width, canvas.height);
   const newImageData = newImage.data;
-
-  console.log(segmentation);
 
   // Apply the effect
   for (let i = 0; i < segmentation.data.length; i++) {
@@ -85,7 +93,11 @@ async function colourPop(canvas, segmentation) {
     ];
 
     // Calculate the gray color
-    const gray = 0.3 * r + 0.59 * g + 0.11 * b;
+    const gray = grayEffect ? 0.3 * r + 0.59 * g + 0.11 * b : 0;
+    const [R, G, B, A] = grayEffect
+      ? [gray, gray, gray, 255]
+      : [bgData[i * 4], bgData[i * 4 + 1], bgData[i * 4 + 2], 255];
+    //      : [bgData[i * 4], bgData[i * 4 + 1], bgData[i * 4 + 2], bgData[i * 4 + 3]];
 
     // Set new RGB color to gray if map value is not 1
     // for the current pixel in iteration
@@ -94,7 +106,7 @@ async function colourPop(canvas, segmentation) {
       newImageData[i * 4 + 1],
       newImageData[i * 4 + 2],
       newImageData[i * 4 + 3]
-    ] = !segmentation.data[i] ? [gray, gray, gray, 255] : [r, g, b, a];
+    ] = !segmentation.data[i] ? [R, G, B, A] : [r, g, b, a];
   }
 
   ctx.putImageData(newImage, 0, 0);
@@ -103,5 +115,6 @@ async function colourPop(canvas, segmentation) {
 (async () => {
   const net = await bodyPix.load(models["resnet"]);
   console.log(net);
+  document.querySelector(".loader").remove();
   await setupImageProcessing(net);
 })();
